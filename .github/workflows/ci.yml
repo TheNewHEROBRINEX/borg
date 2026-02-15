@@ -287,14 +287,14 @@ jobs:
         fi
 
     - name: Build Borg fat binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         pip install -r requirements.d/pyinstaller.txt
         mkdir -p dist/binary
         pyinstaller --clean --distpath=dist/binary scripts/borg.exe.spec
 
     - name: Smoke-test the built binary (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         pushd dist/binary
         echo "single-file binary"
@@ -311,7 +311,7 @@ jobs:
         borg.exe -V
 
     - name: Prepare binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         mkdir -p artifacts
         if [ -f dist/binary/borg.exe ]; then
@@ -324,13 +324,13 @@ jobs:
         ls -l artifacts/
 
     - name: Attest binaries provenance (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       uses: actions/attest-build-provenance@v3
       with:
         subject-path: 'artifacts/*'
 
     - name: Upload binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       uses: actions/upload-artifact@v6
       with:
         name: ${{ matrix.binary }}
