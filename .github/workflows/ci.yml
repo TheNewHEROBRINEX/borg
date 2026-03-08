@@ -149,12 +149,13 @@ jobs:
             ]
           }' || '{
             "include": [
-              {"os": "ubuntu-22.04", "python-version": "3.11", "toxenv": "py311-pyfuse3", "binary": "borg-linux-glibc235-x86_64-gh"},
-              {"os": "ubuntu-22.04-arm", "python-version": "3.11", "toxenv": "py311-pyfuse3", "binary": "borg-linux-glibc235-arm64-gh"},
-              {"os": "ubuntu-24.04", "python-version": "3.12", "toxenv": "py312-llfuse"},
-              {"os": "ubuntu-24.04", "python-version": "3.13", "toxenv": "py313-pyfuse3"},
-              {"os": "ubuntu-24.04", "python-version": "3.14", "toxenv": "py314-mfusepy"},
-              {"os": "macos-15-intel", "python-version": "3.11", "toxenv": "py311-none", "binary": "borg-macos-15-x86_64-gh"}
+              {"os": "ubuntu-22.04", "python-version": "3.11", "toxenv": "py311-pyfuse3", "binary": "borg-3.11-pyfuse3-linux-glibc235-x86_64-gh",
+              {"os": "ubuntu-22.04-arm", "python-version": "3.11", "toxenv": "py311-pyfuse3", "binary": "borg-3.11-pyfuse3-linux-glibc235-arm64-gh"},
+              {"os": "ubuntu-24.04", "python-version": "3.12", "toxenv": "py312-llfuse", "borg-3.12-llfuse-linux-glibc235-x86_64-gh"},
+              {"os": "ubuntu-24.04", "python-version": "3.13", "toxenv": "py313-pyfuse3", "binary": "borg-3.13-pyfuse3-linux-glibc235-x86_64-gh"},
+              {"os": "ubuntu-24.04", "python-version": "3.14", "toxenv": "py314-llfuse", "binary": "borg-3.14-llfuse-linux-glibc235-x86_64-gh"},
+              {"os": "ubuntu-24.04", "python-version": "3.14", "toxenv": "py314-pyfuse3", "binary": "borg-3.14-pyfuse3-linux-glibc235-x86_64-gh"},
+              {"os": "ubuntu-24.04", "python-version": "3.14", "toxenv": "py314-mfusepy", "binary": "borg-3.14-mfusepy-linux-glibc235-x86_64-gh"}
             ]
           }'
         ) }}
@@ -290,14 +291,14 @@ jobs:
         fi
 
     - name: Build Borg fat binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         pip install -r requirements.d/pyinstaller.txt
         mkdir -p dist/binary
         pyinstaller --clean --distpath=dist/binary scripts/borg.exe.spec
 
     - name: Smoke-test the built binary (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         pushd dist/binary
         echo "single-file binary"
@@ -314,7 +315,7 @@ jobs:
         borg.exe -V
 
     - name: Prepare binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       run: |
         mkdir -p artifacts
         if [ -f dist/binary/borg.exe ]; then
@@ -327,13 +328,13 @@ jobs:
         ls -l artifacts/
 
     - name: Attest binaries provenance (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       uses: actions/attest-build-provenance@v4
       with:
         subject-path: 'artifacts/*'
 
     - name: Upload binaries (${{ matrix.binary }})
-      if: ${{ matrix.binary && startsWith(github.ref, 'refs/tags/') }}
+      if: ${{ matrix.binary }}
       uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.binary }}
@@ -463,7 +464,7 @@ jobs:
                 pip install -e ".[mfusepy,cockpit,s3,sftp]"
                 tox -e py311-mfusepy
 
-                if [[ "${{ matrix.do_binaries }}" == "true" && "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+                if [[ "${{ matrix.do_binaries }}" == "true" ]]; then
                   python -m pip install -r requirements.d/pyinstaller.txt
                   mkdir -p dist/binary
                   pyinstaller --clean --distpath=dist/binary scripts/borg.exe.spec
@@ -581,7 +582,7 @@ jobs:
             esac
 
       - name: Upload artifacts
-        if: startsWith(github.ref, 'refs/tags/') && matrix.do_binaries
+        if: matrix.do_binaries
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}
@@ -589,7 +590,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Attest provenance
-        if: startsWith(github.ref, 'refs/tags/') && matrix.do_binaries
+        if: matrix.do_binaries
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: 'artifacts/*'
